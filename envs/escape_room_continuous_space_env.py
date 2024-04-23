@@ -17,28 +17,21 @@ from utils.drawing_utils import draw_robot
 
 
 class EscapeRoomEnv(gym.Env):
-    def __init__(self, max_steps_per_episode=2000):
+    def __init__(self, max_steps_per_episode=2000, goal= (530,290)):
         super().__init__()
 
-        self.spawn_x = int(70 * SCALE_FACTOR)
-        self.spawn_y = int(70 * SCALE_FACTOR)
-        # self.goal_position = np.array([int(550 * SCALE_FACTOR), int(450 * SCALE_FACTOR)])
-
+        self.spawn_x = int(50 * SCALE_FACTOR)
+        self.spawn_y = int(50 * SCALE_FACTOR)
+        
+        # self.goal_position = np.array([int(70 * SCALE_FACTOR), int(450 * SCALE_FACTOR)])
         self.goal_position = np.array(
-            [int(400 * SCALE_FACTOR), int(450 * SCALE_FACTOR)]
+            [int(goal[0] * SCALE_FACTOR), int(goal[1] * SCALE_FACTOR)]
         )
 
         self.walls = [Wall(**wall_data) for wall_data in walls_mapping]
         # self.walls = []
 
-        self.intermediate_goals = [
-            # Checkpoint((int(250 * SCALE_FACTOR), int(360 * SCALE_FACTOR)), CHECKPOINT_RADIUS, (255, 165, 0), "B"),
-            # Checkpoint((int(550 * SCALE_FACTOR), int(450 * SCALE_FACTOR)), CHECKPOINT_RADIUS, (255, 0, 0), "A"),
-            # Checkpoint((int(50 * SCALE_FACTOR), int(450 * SCALE_FACTOR)), CHECKPOINT_RADIUS, (0, 255, 0), "C"),
-            # Checkpoint((int(50 * SCALE_FACTOR), int(750 * SCALE_FACTOR)), CHECKPOINT_RADIUS, (0, 0, 255), "C"),
-        ]
         self.goal = Checkpoint(self.goal_position, CHECKPOINT_RADIUS, (0, 128, 0), "G")
-        # self.all_goals = self.intermediate_goals + [self.goal]
 
         low = np.array([-1.5 * ENV_WIDTH, -1.5 * ENV_HEIGHT, -np.pi, -5.0, -5.0, -5.0])
         high = np.array([1.5 * ENV_WIDTH, 1.5 * ENV_HEIGHT, np.pi, 5.0, 5.0, 5.0])
@@ -87,10 +80,6 @@ class EscapeRoomEnv(gym.Env):
             reward += -np.log1p(heading_difference) 
             if self.robot.omega > np.pi/4:
                 reward += -alpha
-        # else:
-        #     reward += np.log1p( -heading_difference)
-            # if self.robot.omega < np.pi/2:
-            #     reward += +alpha
             
         if distance_improvement > 0:
             reward += +np.log1p(distance_improvement)
@@ -101,8 +90,6 @@ class EscapeRoomEnv(gym.Env):
 
         reward += penalty
         reward += -alpha  # steps penalty
-
-        # print(f"Episode prograss rewards :: {progress_reward} , Efficiancy Penalty :: {efficiency_penalty}, Collision Penalty :: {collision_penalty}")
 
         state = np.array(
             [
@@ -120,10 +107,9 @@ class EscapeRoomEnv(gym.Env):
         truncated = False
         info = {}
 
-        if self.goal.check_goal_reached((self.robot.x, self.robot.y), delta=10):
+        if self.goal.check_goal_reached((self.robot.x, self.robot.y), delta=15):
             base_reward = +5000
-            # Efficiency bonus: to motive agnet to reach the goal in fewer steps
-            efficiency_bonus = (np.log1p(self.max_steps_per_episode/self.t)) * base_reward * alpha
+            efficiency_bonus = (np.log1p(self.max_steps_per_episode/self.t)) * base_reward * alpha  # to motivate agnet to reach the goal in fewer steps
             reward += base_reward + efficiency_bonus
             print(
                 f"Goal '{self.goal.label}' reached in {self.t} steps with cumulative reward {reward} for this episode."
@@ -138,7 +124,7 @@ class EscapeRoomEnv(gym.Env):
             # print(f"Robot went out of bounds after {self.t} steps with a cumulative reward of {reward}.")
         elif self.t >= self.max_steps_per_episode:
             truncated = True
-            reward += -10
+            reward += -5
             info["reason"] = "max_steps_reached"
             # print(f"Max steps reached for this episode after {self.t} steps with a cumulative reward of {reward}.")
 

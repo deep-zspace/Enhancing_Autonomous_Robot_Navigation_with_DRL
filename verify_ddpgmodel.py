@@ -35,7 +35,7 @@ def load_and_simulate(env, agent, n_episodes=5, max_steps=500):
 
 
 def main():
-    env = EscapeRoomEnv(max_steps_per_episode=500)
+    env = EscapeRoomEnv(max_steps_per_episode=500, goal=(350,450))
     n_actions = env.action_space.shape[0]
     input_dims = env.observation_space.shape
 
@@ -60,7 +60,7 @@ def main():
     # Load models from the appropriate file paths
     agent.load_models()  # Ensure this matches your checkpoint saving logic or specify the paths if needed
 
-    load_and_simulate(env, agent, n_episodes=5, max_steps=1000)
+    load_and_simulate(env, agent, n_episodes=5, max_steps=500)
 
 
 if __name__ == "__main__":
