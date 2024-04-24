@@ -11,12 +11,14 @@ class RolloutBuffer:
         self.device = device
 
     def store(self, state, action, logprob, state_value, reward, done):
-        state_tensor = torch.tensor(state).clone().detach().to(self.device)
-        action_tensor = torch.tensor(action).clone().detach().to(self.device)
-        logprob_tensor = torch.tensor(logprob).clone().detach().to(self.device)
-        state_value_tensor = torch.tensor(state_value).clone().detach().to(self.device)
-        reward_tensor = torch.tensor(reward).clone().detach().to(self.device)
-        done_tensor = torch.tensor(done).clone().detach().to(self.device)
+        action_dim = len(action)  # Assuming action is a list or a numpy array
+
+        state_tensor = torch.tensor(state, dtype=torch.float32).to(self.device)
+        action_tensor = torch.tensor(action, dtype=torch.float32).view(1, action_dim).to(self.device)
+        logprob_tensor = torch.tensor(logprob, dtype=torch.float32).to(self.device)
+        state_value_tensor = torch.tensor(state_value, dtype=torch.float32).to(self.device)
+        reward_tensor = torch.tensor(reward, dtype=torch.float32).to(self.device)
+        done_tensor = torch.tensor(done, dtype=torch.bool).to(self.device)
 
         self.states.append(state_tensor)
         self.actions.append(action_tensor)
@@ -24,6 +26,8 @@ class RolloutBuffer:
         self.state_values.append(state_value_tensor)
         self.rewards.append(reward_tensor)
         self.is_terminals.append(done_tensor)
+
+
 
             
 
