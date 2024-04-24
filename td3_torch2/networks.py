@@ -7,7 +7,16 @@ import torch.nn.functional as F
 
 
 class Critic(nn.Module):
-    def __init__(self, lr, state_dims, action_dims, fc1_dims=400, fc2_dims=300, name='Critic', ckpt_dir='tmp/'):
+    def __init__(
+        self,
+        lr,
+        state_dims,
+        action_dims,
+        fc1_dims=400,
+        fc2_dims=300,
+        name="Critic",
+        ckpt_dir="tmp/",
+    ):
         super(Critic, self).__init__()
         self.lr = lr
         self.state_dims = state_dims
@@ -19,13 +28,15 @@ class Critic(nn.Module):
         self.ckpt_path = os.path.join(self.ckpt_dir, self.name)
 
         # NN layers
-        self.fc1 = nn.Linear(*(np.array(self.state_dims) + np.array(self.action_dims)), self.fc1_dims)
+        self.fc1 = nn.Linear(
+            *(np.array(self.state_dims) + np.array(self.action_dims)), self.fc1_dims
+        )
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.fc3 = nn.Linear(self.fc2_dims, 1)
 
         # Optimization objects
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
         self.to(self.device)
 
     def forward(self, state, action):
@@ -36,19 +47,30 @@ class Critic(nn.Module):
         return q
 
     def save_checkpoint(self):
-        print('... saving checkpoint ...')
+        print("... saving checkpoint ...")
         T.save(self.state_dict(), self.ckpt_path)
 
     def load_checkpoint(self, gpu_to_cpu=False):
-        print('... loading checkpoint ...')
+        print("... loading checkpoint ...")
         if gpu_to_cpu:
-            self.load_state_dict(T.load(self.ckpt_path, map_location=lambda storage, loc: storage))
+            self.load_state_dict(
+                T.load(self.ckpt_path, map_location=lambda storage, loc: storage)
+            )
         else:
             self.load_state_dict(T.load(self.ckpt_path))
 
 
 class Actor(nn.Module):
-    def __init__(self, lr, state_dims, action_dims, fc1_dims=400, fc2_dims=300, name='Actor', ckpt_dir='tmp/'):
+    def __init__(
+        self,
+        lr,
+        state_dims,
+        action_dims,
+        fc1_dims=400,
+        fc2_dims=300,
+        name="Actor",
+        ckpt_dir="tmp/",
+    ):
         super(Actor, self).__init__()
         self.lr = lr
         self.state_dims = state_dims
@@ -66,7 +88,7 @@ class Actor(nn.Module):
 
         # Optimization objects
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
         self.to(self.device)
 
     def forward(self, state):
@@ -76,19 +98,14 @@ class Actor(nn.Module):
         return mu
 
     def save_checkpoint(self):
-        print('... saving checkpoint ...')
+        print("... saving checkpoint ...")
         T.save(self.state_dict(), self.ckpt_path)
 
     def load_checkpoint(self, gpu_to_cpu=False):
-        print('... loading checkpoint ...')
+        print("... loading checkpoint ...")
         if gpu_to_cpu:
-            self.load_state_dict(T.load(self.ckpt_path, map_location=lambda storage, loc: storage))
+            self.load_state_dict(
+                T.load(self.ckpt_path, map_location=lambda storage, loc: storage)
+            )
         else:
             self.load_state_dict(T.load(self.ckpt_path))
-
-
-
-
-
-
-

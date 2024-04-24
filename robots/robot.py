@@ -110,9 +110,9 @@ class Robot:
         else:
             # Update to new state since there is no collision
             self.x, self.y, self.theta = new_x, new_y, new_theta
-        
-        self.vx =  vx
-        self.vy =  vy
+
+        self.vx = vx
+        self.vy = vy
         self.omega = omega
 
         return (penalty, collision_flag)

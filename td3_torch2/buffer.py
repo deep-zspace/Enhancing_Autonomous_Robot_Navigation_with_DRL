@@ -11,7 +11,7 @@ class ReplayBuffer:
         self.states = np.zeros((self.buffer_size, *state_dims), dtype=np.float32)
         self.states_ = np.zeros((self.buffer_size, *state_dims), dtype=np.float32)
         self.actions = np.zeros((self.buffer_size, *action_dims), dtype=np.float32)
-        self.rewards = np.zeros((self.buffer_size, ), dtype=np.float32)
+        self.rewards = np.zeros((self.buffer_size,), dtype=np.float32)
         self.done = np.zeros((self.buffer_size,), dtype=np.bool_)
 
     def store_transition(self, state, action, reward, state_, done):
@@ -24,11 +24,13 @@ class ReplayBuffer:
 
         if self.ptr == 0 and not self.is_full:
             self.is_full = True
-            print('... Replay Buffer is full ...')
+            print("... Replay Buffer is full ...")
 
     def load_batch(self, batch_size):
         if self.is_full:
-            samples = np.random.choice(np.arange(self.buffer_size), batch_size, replace=False)
+            samples = np.random.choice(
+                np.arange(self.buffer_size), batch_size, replace=False
+            )
         else:
             samples = np.random.choice(np.arange(self.ptr), batch_size, replace=False)
         states = self.states[samples]

@@ -5,9 +5,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 
+
 class CriticNetwork(nn.Module):
-    def __init__(self, beta, input_dims, fc1_dims, fc2_dims, n_actions,
-                 name, chkpt_dir='tmp/td3'):
+    def __init__(
+        self, beta, input_dims, fc1_dims, fc2_dims, n_actions, name, chkpt_dir="tmp/td3"
+    ):
         super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
@@ -15,7 +17,7 @@ class CriticNetwork(nn.Module):
         self.n_actions = n_actions
         self.name = name
         self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name + '_td3')
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, name + "_td3")
 
         os.makedirs(self.checkpoint_dir, exist_ok=True)  # Ensure directory exists
 
@@ -24,7 +26,7 @@ class CriticNetwork(nn.Module):
         self.q1 = nn.Linear(self.fc2_dims, 1)
 
         self.optimizer = optim.Adam(self.parameters(), lr=beta)
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
         self.to(self.device)
 
     def forward(self, state, action):
@@ -36,16 +38,25 @@ class CriticNetwork(nn.Module):
         return q1
 
     def save_checkpoint(self):
-        print('... saving checkpoint ...')
+        print("... saving checkpoint ...")
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        print('... loading checkpoint ...')
+        print("... loading checkpoint ...")
         self.load_state_dict(T.load(self.checkpoint_file))
 
+
 class ActorNetwork(nn.Module):
-    def __init__(self, alpha, input_dims, fc1_dims, fc2_dims, n_actions,
-                name, chkpt_dir='tmp/td3'):
+    def __init__(
+        self,
+        alpha,
+        input_dims,
+        fc1_dims,
+        fc2_dims,
+        n_actions,
+        name,
+        chkpt_dir="tmp/td3",
+    ):
         super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
@@ -54,7 +65,7 @@ class ActorNetwork(nn.Module):
         # self.max_action = max_action
         self.name = name
         self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name + '_td3')
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, name + "_td3")
 
         os.makedirs(self.checkpoint_dir, exist_ok=True)  # Ensure directory exists
 
@@ -63,7 +74,7 @@ class ActorNetwork(nn.Module):
         self.mu = nn.Linear(self.fc2_dims, n_actions)
 
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
         self.to(self.device)
 
     def forward(self, state):
@@ -75,11 +86,11 @@ class ActorNetwork(nn.Module):
         return prob
 
     def save_checkpoint(self):
-        print('... saving checkpoint ...')
+        print("... saving checkpoint ...")
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        print('... loading checkpoint ...')
+        print("... loading checkpoint ...")
         if os.path.exists(self.checkpoint_file):
             self.load_state_dict(T.load(self.checkpoint_file))
         else:

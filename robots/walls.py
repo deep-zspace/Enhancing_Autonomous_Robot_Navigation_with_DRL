@@ -6,7 +6,7 @@ from constants import ENV_HEIGHT, ENV_WIDTH, SCALE_FACTOR
 # Apply scaling to the wall positions and dimensions
 walls_mapping = [
     {
-        "start_pos": (int(200 * SCALE_FACTOR), 100*SCALE_FACTOR),
+        "start_pos": (int(200 * SCALE_FACTOR), 100 * SCALE_FACTOR),
         "width": int(60 * SCALE_FACTOR),
         "height": int(70 * SCALE_FACTOR),
     },

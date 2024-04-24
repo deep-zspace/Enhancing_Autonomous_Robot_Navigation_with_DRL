@@ -81,23 +81,25 @@ class EscapeRoomEnv(gym.Env):
 
         # Normalize the heading difference to the range [0, pi]
         heading_difference = (heading_difference + np.pi) % (2 * np.pi) - np.pi
-        
+
         # Applying rewards based on heading difference
         if heading_difference > np.pi / 4:  # More than 45 degrees off
-            reward += -np.log1p(heading_difference) 
-            if self.robot.omega > np.pi/4:
+            reward += -np.log1p(heading_difference)
+            if self.robot.omega > np.pi / 4:
                 reward += -alpha
         # else:
         #     reward += np.log1p( -heading_difference)
-            # if self.robot.omega < np.pi/2:
-            #     reward += +alpha
-            
+        # if self.robot.omega < np.pi/2:
+        #     reward += +alpha
+
         if distance_improvement > 0:
             reward += +np.log1p(distance_improvement)
             if np.abs(left_vel) + np.abs(right_vel) < MAX_WHEEL_VELOCITY:
                 reward += +alpha  # Adjust this value based on desired efficiency
         else:
-            reward += -np.log1p(-distance_improvement)  # Adjust this value based on desired efficiency
+            reward += -np.log1p(
+                -distance_improvement
+            )  # Adjust this value based on desired efficiency
 
         reward += penalty
         reward += -alpha  # steps penalty
@@ -123,12 +125,16 @@ class EscapeRoomEnv(gym.Env):
         if self.goal.check_goal_reached((self.robot.x, self.robot.y), delta=10):
             base_reward = +5000
             # Efficiency bonus: to motive agnet to reach the goal in fewer steps
-            efficiency_bonus = (np.log1p(self.max_steps_per_episode/self.t)) * base_reward * alpha
+            efficiency_bonus = (
+                (np.log1p(self.max_steps_per_episode / self.t)) * base_reward * alpha
+            )
             reward += base_reward + efficiency_bonus
             print(
                 f"Goal '{self.goal.label}' reached in {self.t} steps with cumulative reward {reward} for this episode."
             )
-            self.old_distance = np.linalg.norm(np.array([self.robot.x, self.robot.y])- np.array(self.goal.center_pos))
+            self.old_distance = np.linalg.norm(
+                np.array([self.robot.x, self.robot.y]) - np.array(self.goal.center_pos)
+            )
             terminated = True
             info["reason"] = "Goal_reached"
         elif out_of_bounds:
@@ -148,8 +154,7 @@ class EscapeRoomEnv(gym.Env):
         self.robot = Robot([self.spawn_x, self.spawn_y], init_angle=0)
         self.t = 0
         self.old_distance = np.linalg.norm(
-            np.array([self.robot.x, self.robot.y])
-            - np.array(self.goal.center_pos)
+            np.array([self.robot.x, self.robot.y]) - np.array(self.goal.center_pos)
         )
         self.screen = None
         self.clock = None
@@ -186,7 +191,7 @@ class EscapeRoomEnv(gym.Env):
 
             # Draw all checkpoints including the goal if they have not been reached
             # for checkpoint in self.goal:
-                # checkpoint.draw(self.screen)
+            # checkpoint.draw(self.screen)
 
             # Draw the final goal
             self.goal.draw(self.screen)

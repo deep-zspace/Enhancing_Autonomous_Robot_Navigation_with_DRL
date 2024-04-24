@@ -6,6 +6,7 @@ from td3_torch import Agent  # Ensure this import matches your TD3 agent impleme
 from envs.escape_room_continuous_space_env import EscapeRoomEnv
 from tqdm import trange
 
+
 def plot_learning_curve(x, scores, critic_losses, actor_losses, figure_file):
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 15))
 
@@ -38,6 +39,7 @@ def plot_learning_curve(x, scores, critic_losses, actor_losses, figure_file):
     plt.savefig(figure_file)
     plt.close()
 
+
 def train_td3(alpha=0.001, beta=0.001, tau=0.005, n_games=1000):
     env = EscapeRoomEnv()
     agent = Agent(
@@ -48,7 +50,7 @@ def train_td3(alpha=0.001, beta=0.001, tau=0.005, n_games=1000):
         batch_size=100,
         layer1_size=400,
         layer2_size=300,
-        n_actions=env.action_space.shape[0]
+        n_actions=env.action_space.shape[0],
     )
 
     filename = f"TD3_EscapeRoom_{n_games}_games"
@@ -75,7 +77,9 @@ def train_td3(alpha=0.001, beta=0.001, tau=0.005, n_games=1000):
         actor_losses.append(actor_loss)
 
         avg_score = np.mean(score_history[-100:])
-        pbar.set_description(f"Episode {i}: Score {score:.2f}, Avg Score {avg_score:.2f}")
+        pbar.set_description(
+            f"Episode {i}: Score {score:.2f}, Avg Score {avg_score:.2f}"
+        )
 
         if (i + 1) % (n_games // 10) == 0 or i == n_games - 1:
             agent.save_models()
@@ -83,6 +87,7 @@ def train_td3(alpha=0.001, beta=0.001, tau=0.005, n_games=1000):
 
     x = [i + 1 for i in range(n_games)]
     plot_learning_curve(x, score_history, critic_losses, actor_losses, figure_file)
+
 
 if __name__ == "__main__":
     train_td3()

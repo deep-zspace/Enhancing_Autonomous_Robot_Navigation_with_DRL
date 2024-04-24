@@ -5,11 +5,25 @@ import numpy as np
 from .buffer import ReplayBuffer
 from .networks import ActorNetwork, CriticNetwork
 
-class Agent():
-    def __init__(self, alpha, beta, input_dims, tau, env,
-            gamma=0.99, update_actor_interval=2, warmup=1000,
-            n_actions=2, max_size=1000000, layer1_size=400,
-            layer2_size=300, batch_size=100, noise=0.1):
+
+class Agent:
+    def __init__(
+        self,
+        alpha,
+        beta,
+        input_dims,
+        tau,
+        env,
+        gamma=0.99,
+        update_actor_interval=2,
+        warmup=1000,
+        n_actions=2,
+        max_size=1000000,
+        layer1_size=400,
+        layer2_size=300,
+        batch_size=100,
+        noise=0.1,
+    ):
         self.gamma = gamma
         self.tau = tau
         self.max_action = env.action_space.high
@@ -22,56 +36,91 @@ class Agent():
         self.n_actions = n_actions
         self.update_actor_iter = update_actor_interval
 
-        self.actor = ActorNetwork(alpha, input_dims, layer1_size,
-                                  layer2_size, n_actions=n_actions,
-                                  name='actor')
-        self.critic_1 = CriticNetwork(beta, input_dims, layer1_size,
-                                      layer2_size, n_actions=n_actions,
-                                      name='critic_1')
-        self.critic_2 = CriticNetwork(beta, input_dims, layer1_size,
-                                      layer2_size, n_actions=n_actions,
-                                      name='critic_2')
+        self.actor = ActorNetwork(
+            alpha,
+            input_dims,
+            layer1_size,
+            layer2_size,
+            n_actions=n_actions,
+            name="actor",
+        )
+        self.critic_1 = CriticNetwork(
+            beta,
+            input_dims,
+            layer1_size,
+            layer2_size,
+            n_actions=n_actions,
+            name="critic_1",
+        )
+        self.critic_2 = CriticNetwork(
+            beta,
+            input_dims,
+            layer1_size,
+            layer2_size,
+            n_actions=n_actions,
+            name="critic_2",
+        )
 
-        self.target_actor = ActorNetwork(alpha, input_dims, layer1_size,
-                                         layer2_size, n_actions=n_actions,
-                                         name='target_actor')
-        self.target_critic_1 = CriticNetwork(beta, input_dims, layer1_size,
-                                         layer2_size, n_actions=n_actions,
-                                         name='target_critic_1')
-        self.target_critic_2 = CriticNetwork(beta, input_dims, layer1_size,
-                                         layer2_size, n_actions=n_actions,
-                                         name='target_critic_2')
+        self.target_actor = ActorNetwork(
+            alpha,
+            input_dims,
+            layer1_size,
+            layer2_size,
+            n_actions=n_actions,
+            name="target_actor",
+        )
+        self.target_critic_1 = CriticNetwork(
+            beta,
+            input_dims,
+            layer1_size,
+            layer2_size,
+            n_actions=n_actions,
+            name="target_critic_1",
+        )
+        self.target_critic_2 = CriticNetwork(
+            beta,
+            input_dims,
+            layer1_size,
+            layer2_size,
+            n_actions=n_actions,
+            name="target_critic_2",
+        )
 
         self.noise = noise
         self.update_network_parameters(tau=1)
 
     def choose_action(self, observation):
         if self.time_step < self.warmup:
-            mu = T.tensor(np.random.normal(scale=self.noise, size=(self.n_actions,)), dtype=T.float)
+            mu = T.tensor(
+                np.random.normal(scale=self.noise, size=(self.n_actions,)),
+                dtype=T.float,
+            )
         else:
             state = T.tensor(observation, dtype=T.float).to(self.actor.device)
             mu = self.actor.forward(state)
-            
+
         # Move noise tensor to the same device as mu
-        noise_tensor = T.tensor(np.random.normal(scale=self.noise), dtype=T.float).to(mu.device)
-        
+        noise_tensor = T.tensor(np.random.normal(scale=self.noise), dtype=T.float).to(
+            mu.device
+        )
+
         # Add noise tensor to mu
         mu_prime = mu + noise_tensor
         mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
-        
+
         # Detach and move mu_prime to CPU and convert to numpy array
         return mu_prime.cpu().detach().numpy()
-    
 
     def remember(self, state, action, reward, new_state, done):
         self.memory.store_transition(state, action, reward, new_state, done)
 
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
-            return 0.0,0.0
+            return 0.0, 0.0
 
-        state, action, reward, new_state, done = \
-                self.memory.sample_buffer(self.batch_size)
+        state, action, reward, new_state, done = self.memory.sample_buffer(
+            self.batch_size
+        )
 
         state = T.tensor(state, dtype=T.float32).to(self.critic_1.device)
         state_ = T.tensor(new_state, dtype=T.float32).to(self.critic_1.device)
@@ -79,10 +128,10 @@ class Agent():
         reward = T.tensor(reward, dtype=T.float32).to(self.critic_1.device)
         done = T.tensor(done, dtype=T.bool).to(self.critic_1.device)
 
-
         target_actions = self.target_actor.forward(state_)
-        target_actions = target_actions + \
-                T.clamp(T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5)
+        target_actions = target_actions + T.clamp(
+            T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5
+        )
         # might break if elements of min and max are not all equal
         target_actions = T.clamp(target_actions, self.min_action[0], self.max_action[0])
 
@@ -100,7 +149,7 @@ class Agent():
 
         critic_value_ = T.min(q1_, q2_)
 
-        target = reward + self.gamma*critic_value_
+        target = reward + self.gamma * critic_value_
         target = target.view(self.batch_size, 1)
 
         self.critic_1.optimizer.zero_grad()
@@ -153,16 +202,22 @@ class Agent():
         target_critic_2_state_dict = dict(target_critic_2_params)
 
         for name in critic_1_state_dict:
-            critic_1_state_dict[name] = tau*critic_1_state_dict[name].clone() + \
-                    (1-tau)*target_critic_1_state_dict[name].clone()
+            critic_1_state_dict[name] = (
+                tau * critic_1_state_dict[name].clone()
+                + (1 - tau) * target_critic_1_state_dict[name].clone()
+            )
 
         for name in critic_2_state_dict:
-            critic_2_state_dict[name] = tau*critic_2_state_dict[name].clone() + \
-                    (1-tau)*target_critic_2_state_dict[name].clone()
+            critic_2_state_dict[name] = (
+                tau * critic_2_state_dict[name].clone()
+                + (1 - tau) * target_critic_2_state_dict[name].clone()
+            )
 
         for name in actor_state_dict:
-            actor_state_dict[name] = tau*actor_state_dict[name].clone() + \
-                    (1-tau)*target_actor_state_dict[name].clone()
+            actor_state_dict[name] = (
+                tau * actor_state_dict[name].clone()
+                + (1 - tau) * target_actor_state_dict[name].clone()
+            )
 
         self.target_critic_1.load_state_dict(critic_1_state_dict)
         self.target_critic_2.load_state_dict(critic_2_state_dict)
@@ -183,5 +238,3 @@ class Agent():
         self.critic_2.load_checkpoint()
         self.target_critic_1.load_checkpoint()
         self.target_critic_2.load_checkpoint()
-
-    
