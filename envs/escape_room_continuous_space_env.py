@@ -17,11 +17,11 @@ from utils.drawing_utils import draw_robot
 
 
 class EscapeRoomEnv(gym.Env):
-    def __init__(self, max_steps_per_episode=2000, goal= (530,290)):
+    def __init__(self, max_steps_per_episode=2000, goal= (530,290), delta= 15):
         super().__init__()
 
-        self.spawn_x = int(50 * SCALE_FACTOR)
-        self.spawn_y = int(50 * SCALE_FACTOR)
+        self.spawn_x = int(70 * SCALE_FACTOR)
+        self.spawn_y = int(70 * SCALE_FACTOR)
         
         # self.goal_position = np.array([int(70 * SCALE_FACTOR), int(450 * SCALE_FACTOR)])
         self.goal_position = np.array(
@@ -30,7 +30,7 @@ class EscapeRoomEnv(gym.Env):
 
         self.walls = [Wall(**wall_data) for wall_data in walls_mapping]
         # self.walls = []
-
+        self.delta = delta
         self.goal = Checkpoint(self.goal_position, CHECKPOINT_RADIUS, (0, 128, 0), "G")
 
         low = np.array([-1.5 * ENV_WIDTH, -1.5 * ENV_HEIGHT, -np.pi, -5.0, -5.0, -5.0])
@@ -76,9 +76,9 @@ class EscapeRoomEnv(gym.Env):
         heading_difference = (heading_difference + np.pi) % (2 * np.pi) - np.pi
         
         # Applying rewards based on heading difference
-        if heading_difference > np.pi / 4:  # More than 45 degrees off
+        if heading_difference > np.pi / 6:  # More than 30 degrees off
             reward += -np.log1p(heading_difference) 
-            if self.robot.omega > np.pi/4:
+            if self.robot.omega > np.pi/6:
                 reward += -alpha
             
         if distance_improvement > 0:
@@ -107,8 +107,8 @@ class EscapeRoomEnv(gym.Env):
         truncated = False
         info = {}
 
-        if self.goal.check_goal_reached((self.robot.x, self.robot.y), delta=15):
-            base_reward = +5000
+        if self.goal.check_goal_reached((self.robot.x, self.robot.y), delta=self.delta):
+            base_reward = +10_000
             efficiency_bonus = (np.log1p(self.max_steps_per_episode/self.t)) * base_reward * alpha  # to motivate agnet to reach the goal in fewer steps
             reward += base_reward + efficiency_bonus
             print(
@@ -119,7 +119,7 @@ class EscapeRoomEnv(gym.Env):
             info["reason"] = "Goal_reached"
         elif out_of_bounds:
             terminated = True
-            reward += -100
+            reward += -50
             info["reason"] = "out_of_bounds"
             # print(f"Robot went out of bounds after {self.t} steps with a cumulative reward of {reward}.")
         elif self.t >= self.max_steps_per_episode:
@@ -156,35 +156,36 @@ class EscapeRoomEnv(gym.Env):
         )
 
     def render(self, mode="human"):
+        if self.screen is None:
+            pygame.init()
+            pygame.display.init()
+            self.screen = pygame.display.set_mode((ENV_WIDTH, ENV_HEIGHT))
+        if self.clock is None:
+            self.clock = pygame.time.Clock()
+
+        # Clear the screen with white background at the start of each render cycle
+        self.screen.fill((255, 255, 255))
+
+        # Draw all walls
+        for wall in self.walls:
+            wall.draw(self.screen)
+
+        # Draw the final goal
+        self.goal.draw(self.screen)
+
+        # Draw the robot on the screen
+        draw_robot(self.screen, self.robot)
+
         if mode == "human":
-            if self.screen is None:
-                pygame.init()
-                pygame.display.init()
-                self.screen = pygame.display.set_mode((ENV_WIDTH, ENV_HEIGHT))
-            if self.clock is None:
-                self.clock = pygame.time.Clock()
-            # Clear the screen with white background at the start of each render cycle
-            self.screen.fill((255, 255, 255))
-
-            # Draw all walls
-            for wall in self.walls:
-                wall.draw(self.screen)
-
-            # Draw all checkpoints including the goal if they have not been reached
-            # for checkpoint in self.goal:
-                # checkpoint.draw(self.screen)
-
-            # Draw the final goal
-            self.goal.draw(self.screen)
-
-            # Draw the robot on the screen
-            draw_robot(self.screen, self.robot)
-
-            # Update the full display Surface to the screen
+            # Update the full display Surface to the screen for human viewing
             pygame.display.flip()
-
             # Limit the frame rate to maintain a consistent rendering speed
             self.clock.tick(30)
+        elif mode == "rgb_array":
+            # Capture the current rendered frame as an RGB array
+            frame = pygame.surfarray.array3d(pygame.display.get_surface())
+            frame = np.transpose(frame, (1, 0, 2))  # Convert from (width, height, depth) to (height, width, depth)
+            return frame
 
     def close(self):
         pygame.quit()

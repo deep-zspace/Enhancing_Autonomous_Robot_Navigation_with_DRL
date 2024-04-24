@@ -35,7 +35,7 @@ def load_and_simulate(env, agent, n_episodes=5, max_steps=500):
 
 
 def main():
-    env = EscapeRoomEnv(max_steps_per_episode=500, goal=(350,450))
+    env = EscapeRoomEnv(max_steps_per_episode=500, goal=(550,350))
     n_actions = env.action_space.shape[0]
     input_dims = env.observation_space.shape
 
